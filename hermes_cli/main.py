@@ -5239,10 +5239,17 @@ def cmd_cron(args):
 
 
 def cmd_webhook(args):
-    """Webhook subscription management."""
+    """Entry point for 'hermes webhook' command."""
     from hermes_cli.webhook import webhook_command
 
     webhook_command(args)
+
+
+def cmd_credbroker(args):
+    """Entry point for 'hermes credbroker' command."""
+    from hermes_cli.credbroker import credbroker_command
+
+    credbroker_command(args)
 
 
 def cmd_slack(args):
@@ -8070,6 +8077,7 @@ def _coalesce_session_name_args(argv: list) -> list:
         "plugins",
         "acp",
         "webhook",
+        "credbroker",
         "memory",
         "dump",
         "debug",
@@ -9264,6 +9272,44 @@ def main():
     )
 
     webhook_parser.set_defaults(func=cmd_webhook)
+
+    # =========================================================================
+    # credbroker command — credential broker subprocess (isolation)
+    # =========================================================================
+    cb_parser = subparsers.add_parser(
+        "credbroker",
+        help="Manage the credential broker subprocess (experimental credential isolation)",
+        description=(
+            "The credential broker is a standalone subprocess that owns an encrypted "
+            "vault at ~/.hermes/credentials/vault.enc.  Credentials stored here are "
+            "never readable by the agent's terminal tool — clients speak to the "
+            "broker via a Unix socket.  Experimental: not yet wired into provider "
+            "adapters; use 'hermes credbroker get NAME' explicitly where you want it."
+        ),
+    )
+    cb_subparsers = cb_parser.add_subparsers(dest="credbroker_action")
+
+    cb_subparsers.add_parser("start", help="Spawn the broker (idempotent)")
+    cb_subparsers.add_parser("stop", help="Terminate the running broker")
+    cb_subparsers.add_parser("status", help="Show running state / vault location")
+
+    cb_set = cb_subparsers.add_parser("set", help="Store a credential")
+    cb_set.add_argument("name", help="Credential name (e.g. OPENAI_API_KEY)")
+    cb_set.add_argument(
+        "value", nargs="?",
+        help="Value to store. Omit to be prompted (no echo).",
+    )
+
+    cb_get = cb_subparsers.add_parser("get", help="Print a credential value to stdout")
+    cb_get.add_argument("name", help="Credential name")
+
+    cb_subparsers.add_parser("list", aliases=["ls"], help="List stored credential names")
+
+    cb_rm = cb_subparsers.add_parser("delete", aliases=["rm", "remove"],
+                                     help="Remove a credential")
+    cb_rm.add_argument("name", help="Credential name")
+
+    cb_parser.set_defaults(func=cmd_credbroker)
 
     # =========================================================================
     # kanban command — multi-profile collaboration board
