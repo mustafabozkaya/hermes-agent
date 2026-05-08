@@ -273,9 +273,7 @@ export class GatewayClient extends EventEmitter {
         this.pushLog('[sidecar] mirror connection error')
       })
     } catch (err) {
-      const errorName = err instanceof Error && err.name ? err.name : 'Error'
-
-      this.pushLog(`[sidecar] failed to connect ${redactUrl(this.sidecarUrl)} (${errorName})`)
+      this.pushLog(`[sidecar] failed to connect ${redactUrl(this.sidecarUrl)} (constructor error)`)
       this.sidecarWs = null
     }
   }
@@ -470,9 +468,7 @@ export class GatewayClient extends EventEmitter {
         this.publish({ type: 'gateway.stderr', payload: { line } })
       })
     } catch (err) {
-      const errorName = err instanceof Error && err.name ? err.name : 'Error'
-
-      this.pushLog(`[startup] failed to connect websocket gateway ${safeAttachUrl} (${errorName})`)
+      this.pushLog(`[startup] failed to connect websocket gateway ${safeAttachUrl} (constructor error)`)
       this.handleTransportExit(1, 'gateway websocket startup failed')
     }
   }
@@ -641,12 +637,12 @@ export class GatewayClient extends EventEmitter {
 
     if (attachUrl) {
       if (this.attachUrl !== attachUrl) {
-        // The env var rotated at runtime — drop the existing
-        // socket so the next ensure cycle reconnects to the new
-        // endpoint instead of silently keeping the old session.
-        this.attachUrl = attachUrl
+        // The env var rotated at runtime — restart the transport so
+        // switching from spawned-gateway mode to attach mode also
+        // tears down the old Python child. Merely closing `this.ws`
+        // would leave a previously spawned gateway process alive.
         this.rejectPending(new Error('gateway attach url changed'))
-        this.closeGatewaySocket()
+        this.start()
       }
 
       return this.requestOverWebSocket<T>(method, params)
