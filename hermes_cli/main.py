@@ -5636,10 +5636,11 @@ def _model_flow_cloudflare(config, current_model=""):
     print()
 
     # Step 3: Model Selection
+    from hermes_cli.models import _fetch_cloudflare_models
     effective_base = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/v1"
     
     print("  Fetching available models from Cloudflare...")
-    model_ids = fetch_api_models(api_token, effective_base)
+    model_ids = _fetch_cloudflare_models(api_token, account_id)
     
     if not model_ids:
         # Fallback to curated list if live fetch fails

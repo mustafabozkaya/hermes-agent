@@ -18,14 +18,14 @@ class CloudflareProfile(ProviderProfile):
     ) -> list[str] | None:
         """Cloudflare's /models endpoint requires account_id in the URL."""
         from hermes_cli.config import get_env_value
+        from hermes_cli.models import _fetch_cloudflare_models
+        
         account_id = get_env_value("CLOUDFLARE_ACCOUNT_ID")
-        if not account_id:
+        if not account_id or not api_key:
             return None
 
-        # Cloudflare's OpenAI-compatible models list is at /v1/models
-        # The base URL is constructed dynamically.
-        self.base_url = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/v1"
-        return super().fetch_models(api_key=api_key, timeout=timeout)
+        # Use the specific Cloudflare search API for dynamic discovery
+        return _fetch_cloudflare_models(api_key, account_id, timeout=timeout)
 
 
 cloudflare = CloudflareProfile(

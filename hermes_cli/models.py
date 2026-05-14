@@ -2302,6 +2302,15 @@ def provider_model_ids(provider: Optional[str], *, force_refresh: bool = False) 
             creds = resolve_api_key_provider_credentials(normalized)
             api_key = str(creds.get("api_key") or "").strip()
             base_url = str(creds.get("base_url") or "").strip()
+
+            if normalized == "cloudflare" and api_key:
+                from hermes_cli.config import get_env_value
+                account_id = get_env_value("CLOUDFLARE_ACCOUNT_ID")
+                if account_id:
+                    live = _fetch_cloudflare_models(api_key, account_id)
+                    if live:
+                        return live
+
             if api_key and base_url:
                 live = fetch_api_models(api_key, base_url)
                 if live:
@@ -3189,6 +3198,29 @@ def probe_api_models(
         "suggested_base_url": alternate_base if alternate_base != normalized else None,
         "used_fallback": False,
     }
+
+
+def _fetch_cloudflare_models(api_token: str, account_id: str, timeout: float = 8.0) -> Optional[list[str]]:
+    """Fetch Text Generation models from Cloudflare Workers AI search API."""
+    url = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/models/search"
+    headers = {
+        "Authorization": f"Bearer {api_token}",
+        "User-Agent": _HERMES_USER_AGENT,
+    }
+    # Filter for Text Generation models by default
+    query_url = f"{url}?task=Text%20Generation"
+    
+    req = urllib.request.Request(query_url, headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            data = json.loads(resp.read().decode())
+            result = data.get("result", [])
+            if not isinstance(result, list):
+                return None
+            return [m["name"] for m in result if m.get("name")]
+    except Exception as exc:
+        logger.debug("fetch_cloudflare_models failed: %s", exc)
+        return None
 
 
 def _fetch_ai_gateway_models(timeout: float = 5.0) -> Optional[list[str]]:
