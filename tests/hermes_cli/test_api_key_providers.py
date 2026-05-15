@@ -18,6 +18,7 @@ from hermes_cli.auth import (
     STEPFUN_STEP_PLAN_INTL_BASE_URL,
     STEPFUN_STEP_PLAN_CN_BASE_URL,
     _resolve_kimi_base_url,
+    _resolve_cloudflare_base_url,
 )
 from hermes_cli.copilot_auth import _try_gh_cli_token
 
@@ -41,6 +42,7 @@ class TestProviderRegistry:
         ("minimax", "MiniMax", "api_key"),
         ("minimax-cn", "MiniMax (China)", "api_key"),
         ("ai-gateway", "Vercel AI Gateway", "api_key"),
+        ("cloudflare", "Cloudflare Workers AI", "api_key"),
         ("kilocode", "Kilo Code", "api_key"),
         ("gmi", "GMI Cloud", "api_key"),
     ])
@@ -101,6 +103,11 @@ class TestProviderRegistry:
         pconfig = PROVIDER_REGISTRY["ai-gateway"]
         assert pconfig.api_key_env_vars == ("AI_GATEWAY_API_KEY",)
         assert pconfig.base_url_env_var == "AI_GATEWAY_BASE_URL"
+
+    def test_cloudflare_env_vars(self):
+        pconfig = PROVIDER_REGISTRY["cloudflare"]
+        assert pconfig.api_key_env_vars == ("CLOUDFLARE_API_TOKEN",)
+        assert pconfig.base_url_env_var == "CLOUDFLARE_BASE_URL"
 
     def test_kilocode_env_vars(self):
         pconfig = PROVIDER_REGISTRY["kilocode"]
@@ -935,6 +942,26 @@ class TestResolveKimiBaseUrl:
     def test_env_override_wins_over_legacy(self):
         custom = "https://custom.example.com/v1"
         url = _resolve_kimi_base_url("sk-abc123", MOONSHOT_DEFAULT_URL, custom)
+        assert url == custom
+
+
+class TestResolveCloudflareBaseUrl:
+    """Test _resolve_cloudflare_base_url() dynamic construction."""
+
+    def test_constructs_from_account_id(self, monkeypatch):
+        monkeypatch.setenv("CLOUDFLARE_ACCOUNT_ID", "abc123456")
+        url = _resolve_cloudflare_base_url("https://default.com", "")
+        assert url == "https://api.cloudflare.com/client/v4/accounts/abc123456/ai/v1"
+
+    def test_uses_default_when_no_account_id(self, monkeypatch):
+        monkeypatch.delenv("CLOUDFLARE_ACCOUNT_ID", raising=False)
+        url = _resolve_cloudflare_base_url("https://default.com", "")
+        assert url == "https://default.com"
+
+    def test_env_override_wins(self, monkeypatch):
+        monkeypatch.setenv("CLOUDFLARE_ACCOUNT_ID", "abc123456")
+        custom = "https://my-cf-proxy.com/v1"
+        url = _resolve_cloudflare_base_url("https://default.com", custom)
         assert url == custom
 
 

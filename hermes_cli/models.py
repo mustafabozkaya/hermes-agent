@@ -468,6 +468,29 @@ _PROVIDER_MODELS: dict[str, list[str]] = {
     # Azure Foundry: user-provided endpoint and model.
     # Empty list because models depend on the endpoint configuration.
     "azure-foundry": [],
+    "cloudflare": [
+        "@cf/meta/llama-4-scout-17b",
+        "@cf/meta/llama-4-70b",
+        "@cf/meta/llama-3.1-8b-instruct",
+        "@cf/meta/llama-3.1-70b-instruct",
+        "@cf/meta/llama-3-8b-instruct",
+        "@cf/meta/llama-3-70b-instruct",
+        "@cf/mistral/mistral-7b-instruct-v0.1",
+        "@cf/mistral/mistral-small-3.1-24b-instruct-2503",
+        "@cf/google/gemma-4-26b-a4b-it",
+        "@cf/google/gemma-4-2b-it",
+        "@cf/google/gemma-3-27b-it",
+        "@cf/google/gemma-27b-it",
+        "@cf/google/gemma-7b-it",
+        "@cf/moonshotai/kimi-k2.6",
+        "@cf/moonshotai/kimi-k2.5",
+        "@cf/nvidia/nemotron-mini-4b-instruct",
+        "@hf/nousresearch/hermes-2-pro-llama-3-8b",
+        "@hf/nousresearch/hermes-3-llama-3.1-8b",
+        "@cf/qwen/qwen1.5-7b-chat-awq",
+        "@cf/qwen/qwen2.5-7b-instruct",
+        "@cf/phi-2/phi-2",
+    ],
     "novita": [
         "moonshotai/kimi-k2.5",
         "minimax/minimax-m2.7",
@@ -970,6 +993,7 @@ CANONICAL_PROVIDERS: list[ProviderEntry] = [
     ProviderEntry("azure-foundry",  "Azure Foundry",            "Azure Foundry (OpenAI-style or Anthropic-style endpoint — your Azure AI deployment)"),
     ProviderEntry("ai-gateway",     "Vercel AI Gateway",        "Vercel AI Gateway"),
     ProviderEntry("qwen-oauth",     "Qwen OAuth (Portal)",      "Qwen OAuth (reuses local Qwen CLI login)"),
+    ProviderEntry("cloudflare",     "Cloudflare Workers AI",    "Cloudflare Workers AI (Llama 3, Mistral, Hermes — serverless GPUs)"),
 ]
 
 # Auto-extend CANONICAL_PROVIDERS with any provider registered in providers/
@@ -1035,6 +1059,8 @@ _PROVIDER_ALIASES = {
     "aigateway": "ai-gateway",
     "vercel": "ai-gateway",
     "vercel-ai-gateway": "ai-gateway",
+    "cf": "cloudflare",
+    "cloudflare-ai": "cloudflare",
     "kilo": "kilocode",
     "kilo-code": "kilocode",
     "kilo-gateway": "kilocode",
